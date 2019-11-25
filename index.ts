@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const {Cli} = require('./src/Cli');
 const cli = new Cli();
 
