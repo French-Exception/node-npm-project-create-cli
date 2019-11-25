@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const path = require('path');
 const fs = require('fs-extra');
@@ -128,55 +119,43 @@ class NpmProjectCreateCommand {
         });
         return _gitFlowInit;
     }
-    gitCheckoutBranch(gitBin, branch, path) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const _gitCheckout = cp.spawn(gitBin, ['checkout', '-b', branch], {
-                cwd: path,
-                stdio: 'inherit'
-            });
-            return _gitCheckout;
+    async gitCheckoutBranch(gitBin, branch, path) {
+        const _gitCheckout = cp.spawn(gitBin, ['checkout', '-b', branch], {
+            cwd: path,
+            stdio: 'inherit'
+        });
+        return _gitCheckout;
+    }
+    async gitInit(gitBin, path) {
+        const _gitInit = cp.spawn(gitBin, ['init'], {
+            cwd: path,
+            stdio: 'inherit'
+        });
+        return _gitInit;
+    }
+    async npmInit(npmBin, path, name, scope) {
+        const args = ['init', '-y'];
+        const _npmInit = cp.spawn(npmBin, args, {
+            cwd: path,
+            stdio: 'inherit'
+        });
+        return _npmInit;
+    }
+    async _npmInstall(npmBin, absFilePath, toInstall, dev) {
+        const args = [(dev ? '--save-dev' : '--save'), 'install'].concat(toInstall);
+        console.log('_npmInstall', toInstall, npmBin, args);
+        const _npmInstall = await cp.spawn(npmBin, args, {
+            cwd: absFilePath,
+            stdio: 'inherit'
         });
     }
-    gitInit(gitBin, path) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const _gitInit = cp.spawn(gitBin, ['init'], {
-                cwd: path,
-                stdio: 'inherit'
-            });
-            return _gitInit;
+    async npmInstall(npmBin, absFilePath, toInstall, devToInstall) {
+        return this._npmInstall(npmBin, absFilePath, toInstall, false)
+            .then(() => {
+            return this._npmInstall(npmBin, absFilePath, devToInstall, true);
         });
     }
-    npmInit(npmBin, path, name, scope) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const args = ['init', '-y'];
-            const _npmInit = cp.spawn(npmBin, args, {
-                cwd: path,
-                stdio: 'inherit'
-            });
-            return _npmInit;
-        });
-    }
-    _npmInstall(npmBin, absFilePath, toInstall, dev) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const args = [(dev ? '--save-dev' : '--save'), 'install'].concat(toInstall);
-            console.log('_npmInstall', toInstall, npmBin, args);
-            const _npmInstall = yield cp.spawn(npmBin, args, {
-                cwd: absFilePath,
-                stdio: 'inherit'
-            });
-        });
-    }
-    npmInstall(npmBin, absFilePath, toInstall, devToInstall) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this._npmInstall(npmBin, absFilePath, toInstall, false)
-                .then(() => {
-                return this._npmInstall(npmBin, absFilePath, devToInstall, true);
-            });
-        });
-    }
-    updatePackageJson() {
-        return __awaiter(this, void 0, void 0, function* () {
-        });
+    async updatePackageJson() {
     }
 }
 exports.NpmProjectCreateCommand = NpmProjectCreateCommand;
