@@ -72,12 +72,10 @@ exports = module.exports = {
         });
 
         const logger = log4js.getLogger('cli.create');
-        logger.trace('yargs.handler');
 
         const cmd = new NpmProjectCreateCommand(logger);
-        return cmd.run(args)
+        return cmd.build(args).run()
             .then((res) => {
-                logger.trace('yargs.handler cmd.run done');
                 require.main['done'].resolve(res);
             })
             .then(() => {
@@ -85,7 +83,6 @@ exports = module.exports = {
                 const diff: number = <any>end - <any>start;
                 const diffSeconds = diff / 1000;
 
-                logger.trace('yargs.handler done in %s s', diffSeconds);
                 logger.info('Finished in %s seconds', diffSeconds);
             });
     }

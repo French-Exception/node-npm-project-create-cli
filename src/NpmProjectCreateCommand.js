@@ -1,5 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const ChainedPromiseEventEmitter_1 = require("./lib/ChainedPromiseEventEmitter");
+const AbstractCommand_1 = require("./AbstractCommand");
 const path = require('path');
 const fs = require('fs-extra');
 const rimraf = (() => {
@@ -16,101 +18,123 @@ const rimraf = (() => {
 })();
 const mkdirp = require('mkdirp');
 const cp = require('child-process-promise');
-class NpmProjectCreateCommand {
+class NpmProjectCreateCommand extends AbstractCommand_1.AbstractCommand {
     constructor(logger) {
-        this.logger = logger;
+        super('npm.project.create', logger);
     }
-    run(args) {
+    _build(args, chain) {
         const self = this;
         const absoluteFullPathScoped = path.join(args.rootPath, (args.scope ? '@' + args.scope : ''), args.name);
-        return Promise.resolve()
-            .then(() => {
-            return self.destroyAndCreateScopeDir(args.destroyBefore, absoluteFullPathScoped);
+        return chain
+            .chain('destroy.create.scope.dir', (resolve, reject) => {
+            return self
+                .destroyAndCreateScopeDir(args.destroyBefore, absoluteFullPathScoped)
+                .catch((e) => {
+                return reject(e);
+            })
+                .then(() => {
+                resolve();
+            });
         })
-            .then(() => {
-            return self.npmInit(args.npmBin, absoluteFullPathScoped, args.name, args.scope);
+            .chain('npm.init', (resolve, reject) => {
+            return self
+                .npmInit(args.npmBin, absoluteFullPathScoped, args.name, args.scope)
+                .catch((e) => {
+                return reject(e);
+            })
+                .then(() => {
+                resolve();
+            });
         })
-            .catch((e) => {
-            self.logger.error(e);
-            process.exit(1);
+            .chain('npm.install', (resolve, reject) => {
+            return self
+                .npmInstall(args.npmBin, absoluteFullPathScoped, args.install, args.devInstall)
+                .catch((e) => {
+                return reject(e);
+            })
+                .then(() => {
+                resolve();
+            });
         })
-            .then(() => {
-            return self.npmInstall(args.npmBin, absoluteFullPathScoped, args.install, args.devInstall);
+            .chain('git.init', (resolve, reject) => {
+            return self
+                .gitInit(args.gitBin, absoluteFullPathScoped)
+                .catch((e) => {
+                return reject(e);
+            })
+                .then(() => {
+                resolve();
+            });
         })
-            .then(() => {
-            return self.gitInit(args.gitBin, absoluteFullPathScoped);
+            .chain('git.flow.init', (resolve, reject) => {
+            return self
+                .gitFlowInit(args.gitBin, absoluteFullPathScoped)
+                .catch((e) => {
+                return reject(e);
+            })
+                .then(() => {
+                resolve();
+            });
         })
-            .then(() => {
-            return self.gitFlowInit(args.gitBin, absoluteFullPathScoped);
+            .chain('packagejson.update', (resolve, reject) => {
+            return self.updatePackageJson()
+                .catch((e) => {
+                return reject(e);
+            })
+                .then(() => {
+                resolve();
+            });
         })
-            .then(() => {
-            return self.updatePackageJson();
-        });
-    }
-    trace(...args) {
-        this.logger.trace.apply(this.logger, args);
-    }
-    debug(...args) {
-        this.logger.debug.apply(this.logger, args);
-    }
-    info(...args) {
-        this.logger.info.apply(this.logger, args);
-    }
-    warn(...args) {
-        this.logger.warn.apply(this.logger, args);
-    }
-    error(...args) {
-        this.logger.error.apply(this.logger, args);
-    }
-    fatal(...args) {
-        this.logger.fatal.apply(this.logger, args);
+            .promise();
     }
     destroyAndCreateScopeDir(destroyBefore, absScopedPath) {
         const self = this;
+        const chain = new ChainedPromiseEventEmitter_1.ChainedPromiseEventEmitter(this.logger);
         const absScopedPathNorm = path.normalize(absScopedPath);
-        self.logger.trace('destroyAndCreateScopeDir start');
-        return Promise.resolve()
-            .then(() => {
+        const input = { path: absScopedPathNorm, exists: false };
+        return chain
+            .chain('path.exists.check', (resolve, reject) => {
             let exists = false;
             try {
                 fs.access(absScopedPathNorm, fs.W_OK);
-                exists = true;
+                input.exists = true;
             }
             catch (e) {
-                exists = false;
+                input.exists = false;
             }
-            return { path: absScopedPathNorm, exists: exists };
+            return resolve();
         })
-            .catch(() => {
-            return { path: absScopedPathNorm, exists: false };
+            .chain('path.exists.check.result', (resolve, reject) => {
+            if (destroyBefore && input.exists) {
+                rimraf(input.path)
+                    .then(() => {
+                    return resolve();
+                })
+                    .catch((e) => {
+                    this.logger.error(e);
+                    return resolve();
+                });
+            }
+            else {
+                return resolve();
+            }
         })
-            .then((input) => {
-            self.logger.trace('destroyAndCreateScopeDir exists ?', input);
-            return new Promise((resolve, reject) => {
-                if (destroyBefore && input.exists) {
-                    rimraf(input.path)
-                        .catch((e) => {
-                        self.debug('destroyAndCreateScopeDir', e);
-                        return resolve(input);
-                    });
-                }
-                resolve(input);
-            });
+            .chain('path.mkdirp', (resolve, reject) => {
+            if (!input.path || destroyBefore) {
+                mkdirp(input.path, (e) => {
+                    if (e) {
+                        this.logger.error(e);
+                        return resolve(e);
+                    }
+                    return resolve();
+                });
+            }
+            else {
+                return resolve();
+            }
         })
-            .then((input) => {
-            return new Promise((resolve, reject) => {
-                if (!input.path || destroyBefore) {
-                    mkdirp(input.path, (e) => {
-                        if (e)
-                            return resolve(e);
-                        return resolve();
-                    });
-                }
-                else {
-                    resolve();
-                }
-            });
-        });
+            .run()
+            .promise();
     }
     gitFlowInit(gitBin, path) {
         const _gitFlowInit = cp.spawn(gitBin, ['flow', 'init', '-d'], {
