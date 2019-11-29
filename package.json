@@ -11,6 +11,9 @@
     "type": "git",
     "url": "git@github.com:French-Exception/frenchex-node-npm-project-create-cli.git"
   },
+  "publishConfig": {
+    "public": true
+  },
   "keywords": [],
   "author": "Stéphane ERARD <serard06@protonmail.com>",
   "license": "ISC",
