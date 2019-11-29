@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const {Cli} = require('./src/Cli');
+const {Cli} = require('./Cli');
 const cli = new Cli();
 
 cli
