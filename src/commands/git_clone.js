@@ -17,6 +17,21 @@ exports = module.exports = {
             desc: 'git bin',
             default: 'git'
         },
+        'npm-bin': {
+            type: 'string',
+            desc: 'npm bin',
+            default: 'npm'
+        },
+        'dev': {
+            type: 'boolean',
+            default: true,
+            desc: 'npm i --only dev'
+        },
+        'destroy-before': {
+            type: 'boolean',
+            default: false,
+            desc: 'Delete directory if exists before cloning'
+        },
         'log-level': {
             type: 'choice',
             choices: ['trace', 'debug', 'log', 'info', 'warn', 'error', 'fatal'],
@@ -31,10 +46,12 @@ exports = module.exports = {
             appenders: { 'cli.git.clone': { type: 'console' } },
             categories: { default: { appenders: ['cli.git.clone'], level: args.logLevel } }
         });
-        const logger = log4js.getLogger('cli.create');
+        const logger = log4js.getLogger('cli.git.clone');
         logger.trace('yargs.handler');
         const cmd = new GitCloneCommand(logger);
-        return cmd.run(args)
+        return cmd
+            .build(args)
+            .run()
             .then((res) => {
             logger.trace('yargs.handler cmd.run done');
             require.main['done'].resolve(res);

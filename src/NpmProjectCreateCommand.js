@@ -1,22 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const ChainedPromiseEventEmitter_1 = require("./lib/ChainedPromiseEventEmitter");
 const AbstractCommand_1 = require("./AbstractCommand");
 const path = require('path');
 const fs = require('fs-extra');
-const rimraf = (() => {
-    const _rimraf = require('rimraf');
-    return (_path) => {
-        return new Promise((resolve, reject) => {
-            _rimraf(_path, (e) => {
-                if (e)
-                    return reject(e);
-                return resolve();
-            });
-        });
-    };
-})();
-const mkdirp = require('mkdirp');
 const cp = require('child-process-promise');
 class NpmProjectCreateCommand extends AbstractCommand_1.AbstractCommand {
     constructor(logger) {
@@ -87,73 +73,24 @@ class NpmProjectCreateCommand extends AbstractCommand_1.AbstractCommand {
         })
             .promise();
     }
-    destroyAndCreateScopeDir(destroyBefore, absScopedPath) {
-        const self = this;
-        const chain = new ChainedPromiseEventEmitter_1.ChainedPromiseEventEmitter(this.logger);
-        const absScopedPathNorm = path.normalize(absScopedPath);
-        const input = { path: absScopedPathNorm, exists: false };
-        return chain
-            .chain('path.exists.check', (resolve, reject) => {
-            let exists = false;
-            try {
-                fs.access(absScopedPathNorm, fs.W_OK);
-                input.exists = true;
-            }
-            catch (e) {
-                input.exists = false;
-            }
-            return resolve();
-        })
-            .chain('path.exists.check.result', (resolve, reject) => {
-            if (destroyBefore && input.exists) {
-                rimraf(input.path)
-                    .then(() => {
-                    return resolve();
-                })
-                    .catch((e) => {
-                    this.logger.error(e);
-                    return resolve();
-                });
-            }
-            else {
-                return resolve();
-            }
-        })
-            .chain('path.mkdirp', (resolve, reject) => {
-            if (!input.path || destroyBefore) {
-                mkdirp(input.path, (e) => {
-                    if (e) {
-                        this.logger.error(e);
-                        return resolve(e);
-                    }
-                    return resolve();
-                });
-            }
-            else {
-                return resolve();
-            }
-        })
-            .run()
-            .promise();
-    }
     gitFlowInit(gitBin, path) {
         const _gitFlowInit = cp.spawn(gitBin, ['flow', 'init', '-d'], {
             cwd: path,
-            stdio: 'inherit'
+            stdio: null
         });
         return _gitFlowInit;
     }
     async gitCheckoutBranch(gitBin, branch, path) {
         const _gitCheckout = cp.spawn(gitBin, ['checkout', '-b', branch], {
             cwd: path,
-            stdio: 'inherit'
+            stdio: null
         });
         return _gitCheckout;
     }
     async gitInit(gitBin, path) {
         const _gitInit = cp.spawn(gitBin, ['init'], {
             cwd: path,
-            stdio: 'inherit'
+            stdio: null
         });
         return _gitInit;
     }
@@ -161,16 +98,15 @@ class NpmProjectCreateCommand extends AbstractCommand_1.AbstractCommand {
         const args = ['init', '-y'];
         const _npmInit = cp.spawn(npmBin, args, {
             cwd: path,
-            stdio: 'inherit'
+            stdio: null
         });
         return _npmInit;
     }
     async _npmInstall(npmBin, absFilePath, toInstall, dev) {
         const args = [(dev ? '--save-dev' : '--save'), 'install'].concat(toInstall);
-        console.log('_npmInstall', toInstall, npmBin, args);
         const _npmInstall = await cp.spawn(npmBin, args, {
             cwd: absFilePath,
-            stdio: 'inherit'
+            stdio: null
         });
     }
     async npmInstall(npmBin, absFilePath, toInstall, devToInstall) {

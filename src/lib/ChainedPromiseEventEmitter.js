@@ -11,11 +11,11 @@ class ChainedPromiseEventEmitter extends EventEmitter {
         const self = this;
         let start;
         let end;
-        this.logger.info('chaining %s', name);
+        this.logger.debug('chaining %s', name);
         this._chain = this._chain.then(() => {
             return new Promise((resolve, reject) => {
                 start = new Date();
-                self.logger.info('%s start chain', name, start);
+                self.logger.debug('%s start chain', name, start);
                 const result = (() => {
                     try {
                         const p = promiseFn.bind(self)((...args) => {
@@ -44,7 +44,7 @@ class ChainedPromiseEventEmitter extends EventEmitter {
                 .then(() => {
                 const end = new Date();
                 const diffSeconds = (end - start) / 1000;
-                self.logger.info('%s end chain, finished in %s seconds', name, diffSeconds);
+                self.logger.debug('%s end chain, finished in %s seconds', name, diffSeconds);
             });
         });
         return this;

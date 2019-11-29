@@ -20,18 +20,7 @@ import {AbstractCommand} from './AbstractCommand'
 
 const path = require('path');
 const fs = require('fs-extra');
-const rimraf = (() => {
-    const _rimraf = require('rimraf');
-    return (_path) => {
-        return new Promise((resolve, reject) => {
-            _rimraf(_path, (e) => {
-                if (e) return reject(e);
-                return resolve();
-            })
-        })
-    }
-})();
-const mkdirp = require('mkdirp');
+
 const cp = require('child-process-promise');
 
 export class NpmProjectCreateCommand extends AbstractCommand {
@@ -108,62 +97,12 @@ export class NpmProjectCreateCommand extends AbstractCommand {
     }
 
 
-    destroyAndCreateScopeDir(destroyBefore: boolean, absScopedPath: string): Promise<any> {
-        const self = this;
-        const chain = new ChainedPromiseEventEmitter(this.logger);
 
-        const absScopedPathNorm = path.normalize(absScopedPath);
-
-        const input: { path: string, exists: boolean } = {path: absScopedPathNorm, exists: false};
-
-        return chain
-            .chain('path.exists.check', (resolve: Function, reject: Function) => {
-                let exists = false;
-                try {
-                    fs.access(absScopedPathNorm, fs.W_OK);
-                    input.exists = true;
-                } catch (e) {
-                    input.exists = false;
-                }
-                return resolve();
-            })
-            .chain('path.exists.check.result', (resolve: Function, reject: Function) => {
-                if (destroyBefore && input.exists) {
-                    rimraf(input.path)
-                        .then(() => {
-                            return resolve();
-                        })
-                        .catch((e) => {
-                            this.logger.error(e);
-                            return resolve();
-                        })
-                } else {
-                    return resolve();
-                }
-            })
-            .chain('path.mkdirp', (resolve: Function, reject: Function) => {
-                if (!input.path || /** just deleted it **/ destroyBefore) {
-                    mkdirp(input.path, (e) => {
-                        if (e) {
-                            this.logger.error(e);
-                            return resolve(e);
-                        }
-                        return resolve();
-                    })
-                } else {
-                    return resolve();
-                }
-            })
-            .run<any>()
-            .promise();
-
-
-    }
 
     gitFlowInit(gitBin, path) {
         const _gitFlowInit = cp.spawn(gitBin, ['flow', 'init', '-d'], {
             cwd: path,
-            stdio: 'inherit'
+            stdio: null
         });
 
         return _gitFlowInit;
@@ -172,7 +111,7 @@ export class NpmProjectCreateCommand extends AbstractCommand {
     async gitCheckoutBranch(gitBin: string, branch: string, path: string) {
         const _gitCheckout = cp.spawn(gitBin, ['checkout', '-b', branch], {
             cwd: path,
-            stdio: 'inherit'
+            stdio: null
         });
 
         return _gitCheckout;
@@ -181,7 +120,7 @@ export class NpmProjectCreateCommand extends AbstractCommand {
     async gitInit(gitBin: string, path: string) {
         const _gitInit = cp.spawn(gitBin, ['init'], {
             cwd: path,
-            stdio: 'inherit'
+            stdio: null
         })
 
         return _gitInit;
@@ -192,7 +131,7 @@ export class NpmProjectCreateCommand extends AbstractCommand {
 
         const _npmInit = cp.spawn(npmBin, args, {
             cwd: path,
-            stdio: 'inherit'
+            stdio: null
         });
 
         return _npmInit;
@@ -201,11 +140,10 @@ export class NpmProjectCreateCommand extends AbstractCommand {
 
     async _npmInstall(npmBin: string, absFilePath: string, toInstall: string[], dev: boolean) {
         const args = [(dev ? '--save-dev' : '--save'), 'install'].concat(toInstall);
-        console.log('_npmInstall', toInstall, npmBin, args);
 
         const _npmInstall = await cp.spawn(npmBin, args, {
             cwd: absFilePath,
-            stdio: 'inherit'
+            stdio: null
         });
 
     }

@@ -23,12 +23,12 @@ export class ChainedPromiseEventEmitter extends EventEmitter {
         let start: Date;
         let end: Date;
 
-        this.logger.info('chaining %s', name);
+        this.logger.debug('chaining %s', name);
 
         this._chain = this._chain.then(() => {
             return new Promise((resolve, reject) => {
                 start = new Date();
-                self.logger.info('%s start chain', name, start);
+                self.logger.debug('%s start chain', name, start);
 
                 const result: any | Promise<any> = (() => {
                     try {
@@ -59,7 +59,7 @@ export class ChainedPromiseEventEmitter extends EventEmitter {
                 .then(() => {
                     const end = new Date();
                     const diffSeconds = (<any>end - <any>start) / 1000;
-                    self.logger.info('%s end chain, finished in %s seconds', name, diffSeconds);
+                    self.logger.debug('%s end chain, finished in %s seconds', name, diffSeconds);
                 })
         })
 
