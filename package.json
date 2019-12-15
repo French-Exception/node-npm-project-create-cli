@@ -1,8 +1,8 @@
 {
-  "name": "@frenchex/npm-project-create",
+  "name": "@frenchex/npm-project-create-cli",
   "version": "1.1.1",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
   "bin": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -28,6 +28,7 @@
     "typescript": "^3.7.2"
   },
   "dependencies": {
+    "@frenchex/npm-project-create-api": "^1.1.1",
     "child-process-promise": "^2.2.1",
     "fs-extra": "^8.1.0",
     "log4js": "^6.1.0",

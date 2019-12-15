@@ -2,6 +2,21 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const yargs = require("yargs");
 const EventEmitter = require('events');
+async function run() {
+    const cli = new Cli();
+    cli
+        .build()
+        .then(() => {
+        return cli.run();
+    })
+        .catch((e) => {
+        console.error(e);
+    })
+        .then(() => {
+        process.exit(0);
+    });
+}
+exports.run = run;
 class Cli extends EventEmitter {
     constructor() {
         super();
@@ -18,19 +33,18 @@ class Cli extends EventEmitter {
             .help()
             .version();
     }
-    run() {
-        const self = this;
+    async run() {
         return new Promise((resolve, reject) => {
-            self._run = {
+            this._run = {
                 resolve: () => {
-                    return resolve(self.args);
+                    return resolve(this.args);
                 },
                 reject: (e) => {
                     return reject(e);
                 }
             };
-            require.main['done'] = self._run;
-            self.args = this.yargs.argv;
+            require.main['done'] = this._run;
+            this.args = this.yargs.argv;
         });
     }
     getArgs() {
