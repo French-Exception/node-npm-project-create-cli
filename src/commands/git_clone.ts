@@ -1,3 +1,5 @@
+import * as lib from "@frenchex/npm-project-create-api";
+
 exports = module.exports = {
     command: 'clone <gitUrl>',
     desc: 'Create a new Npm project from a git url',
@@ -22,7 +24,7 @@ exports = module.exports = {
             desc: 'npm bin',
             default: 'npm'
         },
-        'dev':{
+        'dev': {
             type: 'boolean',
             default: true,
             desc: 'npm i --only dev'
@@ -40,8 +42,7 @@ exports = module.exports = {
     },
     handler: (args) => {
         const start = new Date();
-        const {GitCloneCommand} = require('./../GitCloneCommand');
-        const log4js = require('log4js');
+        const log4js = require('@log4js-node/log4js-api');
         log4js.configure({
             appenders: {'cli.git.clone': {type: 'console'}},
             categories: {default: {appenders: ['cli.git.clone'], level: args.logLevel}}
@@ -50,7 +51,7 @@ exports = module.exports = {
         const logger = log4js.getLogger('cli.git.clone');
         logger.trace('yargs.handler');
 
-        const cmd = new GitCloneCommand(logger);
+        const cmd = lib.gitClone(args);
         return cmd
             .build(args)
             .run()

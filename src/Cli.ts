@@ -13,9 +13,6 @@ export async function run() {
         .catch((e) => {
             console.error(e);
         })
-        .then(() => {
-            process.exit(0);
-        });
 }
 
 export class Cli extends EventEmitter {
@@ -42,21 +39,8 @@ export class Cli extends EventEmitter {
             .version();
     }
 
-    async run() {
-        return new Promise((resolve, reject) => {
-            this._run = {
-                resolve: () => {
-                    return resolve(this.args);
-                },
-                reject: (e) => {
-                    return reject(e);
-                }
-            };
-
-            require.main['done'] = this._run;
-
-            this.args = this.yargs.argv;
-        });
+    run() {
+        this.args = this.yargs.argv;
     }
 
     getArgs() {

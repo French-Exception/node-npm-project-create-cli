@@ -6,5 +6,5 @@ const {run} = require('./Cli');
 (async() => {
     await run();
 
-    process.exit();
+
 })();

@@ -1,3 +1,7 @@
+import * as api from "@frenchex/npm-project-create-api";
+import * as log4js from "log4js";
+import * as path from "path";
+
 exports = module.exports = {
     command: 'create <name>',
     desc: 'Create a new Npm project',
@@ -24,7 +28,7 @@ exports = module.exports = {
         'destroy-before': {
             type: 'boolean',
             desc: 'If dir exists, delete it',
-            default: false
+            default: true
         },
         'root-path': {
             type: 'string',
@@ -62,31 +66,27 @@ exports = module.exports = {
             default: 'info'
         }
     },
-    handler: (args) => {
-        const start = new Date();
-        const {NpmProjectCreateCommand} = require('./../NpmProjectCreateCommand');
-        const log4js = require('log4js');
+    handler: async (args) => {
+        const logger = log4js.getLogger('create');
         log4js.configure({
-            appenders: {'cli.create': {type: 'console'}},
-            categories: {default: {appenders: ['cli.create'], level: args.logLevel}}
+            appenders: {default: {type: 'console'}},
+            categories: {default: {appenders: ['default'], level: args.logLevel}}
         });
 
-        const logger = log4js.getLogger('cli.create');
-        logger.trace('yargs.handler');
+        const gitBin = path.isAbsolute(args.gitBin) ? args.gitBin : await api.which(args.gitBin);
+        const npmBin = path.isAbsolute(args.npmBin) ? args.gitBin : await api.which(args.npmBin);
+        args.gitBin = gitBin;
+        args.npmBin = npmBin;
 
-        const cmd = new NpmProjectCreateCommand(logger);
-        return cmd.run(args)
-            .then((res) => {
-                logger.trace('yargs.handler cmd.run done');
-                require.main['done'].resolve(res);
-            })
-            .then(() => {
-                const end = new Date();
-                const diff: number = <any>end - <any>start;
-                const diffSeconds = diff / 1000;
 
-                logger.trace('yargs.handler done in %s s', diffSeconds);
-                logger.info('Finished in %s seconds', diffSeconds);
-            });
+        const op = api.npmProjectCreate(logger);
+
+        op.build(args);
+
+        const promise = op.run();
+
+        return promise;
     }
 };
+
+

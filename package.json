@@ -5,14 +5,16 @@
   "main": "src/index.js",
   "bin": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsc -w",
+    "build": "tsc",
+    "release": "npm publish"
   },
   "repository": {
     "type": "git",
     "url": "git@github.com:French-Exception/frenchex-node-npm-project-create-cli.git"
   },
   "publishConfig": {
-    "public": true
+    "access": "public"
   },
   "keywords": [],
   "author": "Stéphane ERARD <serard06@protonmail.com>",
