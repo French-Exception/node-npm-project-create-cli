@@ -29,7 +29,7 @@ exports = module.exports = {
         'destroy-before': {
             type: 'boolean',
             desc: 'If dir exists, delete it',
-            default: true
+            default: false
         },
         'root-path': {
             type: 'string',
@@ -65,6 +65,23 @@ exports = module.exports = {
             type: 'choice',
             choices: ['trace', 'debug', 'log', 'info', 'warn', 'error', 'fatal'],
             default: 'info'
+        },
+        'package-version': {
+            type: 'string',
+            default: '0.0.1',
+        },
+        'package-email': {
+            type: 'string',
+            default: process.env.USER_EMAIL
+        },
+        'package-author': {
+            type: 'string',
+            default: process.env.USER
+        },
+        'package-json': {
+            type: 'object',
+            default: {},
+            description: 'Overload package.json using --package-json.foo=bar'
         }
     },
     handler: async (args) => {
@@ -77,6 +94,9 @@ exports = module.exports = {
         const npmBin = path.isAbsolute(args.npmBin) ? args.gitBin : await api.which(args.npmBin);
         args.gitBin = gitBin;
         args.npmBin = npmBin;
+        args.packageJson.version = args.version;
+        args.packageJson.author = args.author;
+        args.packageJson.email = args.email;
         const op = api.npmProjectCreate(logger);
         op.build(args);
         const promise = op.run();

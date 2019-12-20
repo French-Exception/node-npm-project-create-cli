@@ -1,4 +1,6 @@
-import * as lib from "@frenchex/npm-project-create-api";
+import * as api from "@frenchex/npm-project-create-api";
+import * as path from "path";
+import * as log4js from "log4js";
 
 exports = module.exports = {
     command: 'clone <gitUrl>',
@@ -40,32 +42,25 @@ exports = module.exports = {
             default: 'info'
         }
     },
-    handler: (args) => {
-        const start = new Date();
-        const log4js = require('@log4js-node/log4js-api');
+    handler: async (args) => {
+        const logger = log4js.getLogger('create');
         log4js.configure({
-            appenders: {'cli.git.clone': {type: 'console'}},
-            categories: {default: {appenders: ['cli.git.clone'], level: args.logLevel}}
+            appenders: {default: {type: 'console'}},
+            categories: {default: {appenders: ['default'], level: args.logLevel}}
         });
 
-        const logger = log4js.getLogger('cli.git.clone');
-        logger.trace('yargs.handler');
+        const gitBin = path.isAbsolute(args.gitBin) ? args.gitBin : await api.which(args.gitBin);
+        const npmBin = path.isAbsolute(args.npmBin) ? args.gitBin : await api.which(args.npmBin);
+        args.gitBin = gitBin;
+        args.npmBin = npmBin;
 
-        const cmd = lib.gitClone(args);
-        return cmd
-            .build(args)
-            .run()
-            .then((res) => {
-                logger.trace('yargs.handler cmd.run done');
-                require.main['done'].resolve(res);
-            })
-            .then(() => {
-                const end = new Date();
-                const diff: number = <any>end - <any>start;
-                const diffSeconds = diff / 1000;
 
-                logger.trace('yargs.handler done in %s s', diffSeconds);
-                logger.info('Finished in %s seconds', diffSeconds);
-            });
+        const op = api.gitClone(logger);
+
+        op.build(args);
+
+        const promise = op.run();
+
+        return promise;
     }
 };
